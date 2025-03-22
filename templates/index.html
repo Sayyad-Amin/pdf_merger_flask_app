@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Merger - Simple PDF Merging Tool</title>
+    <style>
+        :root {
+            /* Light mode colors */
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --secondary: #f97316;
+            --secondary-hover: #ea580c;
+            --background: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --input-bg: #f1f5f9;
+            --success: #10b981;
+            --error: #ef4444;
+            --shadow: rgba(0, 0, 0, 0.05);
+            --transition-speed: 0.3s;
+        }
+
+        [data-theme="dark"] {
+            /* Dark mode colors */
+            --primary: #6366f1;
+            --primary-hover: #818cf8;
+            --secondary: #f97316;
+            --secondary-hover: #fb923c;
+            --background: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f1f5f9;
+            --text-light: #94a3b8;
+            --border: #334155;
+            --input-bg: #1e293b;
+            --success: #10b981;
+            --error: #ef4444;
+            --shadow: rgba(0, 0, 0, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color var(--transition-speed), color var(--transition-speed), border-color var(--transition-speed), box-shadow var(--transition-speed);
+        }
+
+        html, body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            background-color: var(--background);
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            animation: fadeIn 0.8s ease;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        header p {
+            color: var(--text-light);
+            font-size: 1.2rem;
+        }
+
+        main {
+            margin-bottom: 3rem;
+        }
+
+        .upload-container {
+            background-color: var(--card-bg);
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 10px 25px var(--shadow);
+            margin-bottom: 2rem;
+            transform: translateY(20px);
+            opacity: 0;
+            transition: transform 0.5s ease, opacity 0.5s ease;
+        }
+
+        .upload-container:hover {
+            box-shadow: 0 15px 30px var(--shadow);
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: 0.75rem;
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            background-color: var(--input-bg);
+            margin-bottom: 1.5rem;
+            transform: translateY(20px);
+            opacity: 0;
+            transition: transform 0.5s ease 0.1s, opacity 0.5s ease 0.1s, border-color 0.3s ease, background-color 0.3s ease;
+        }
+
+        .drop-zone::before {
+            content: '';
+            position: absolute;
+            top: -100%;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                45deg,
+                transparent 20%,
+                rgba(255, 255, 255, 0.1) 25%,
+                transparent 30%
+            );
+            transform: rotate(45deg);
+            transition: all 1s;
+        }
+
+        .drop-zone.active {
+            border-color: var(--primary);
+            background-color: rgba(79, 70, 229, 0.05);
+        }
+
+        .drop-zone.active::before {
+            animation: shine 1.5s infinite;
+        }
+
+        @keyframes shine {
+            0% {
+                top: -100%;
+                left: -100%;
+            }
+            100% {
+                top: 100%;
+                left: 100%;
+            }
+        }
+
+        .drop-zone-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .drop-zone-content svg {
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+            transition: transform 0.3s ease;
+        }
+
+        .drop-zone:hover svg {
+            transform: translateY(-5px);
+        }
+
+        .drop-zone-content p {
+            font-size: 1.25rem;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+
+        .drop-zone-content span {
+            color: var(--text-light);
+            margin-bottom: 0.5rem;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .button {
+            display: inline-block;
+            background-color: var(--primary);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            transform: translateY(20px);
+            opacity: 0;
+            box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2);
+        }
+
+        .button:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 10px rgba(79, 70, 229, 0.3);
+        }
+
+        .button:active {
+            transform: translateY(0);
+            box-shadow: 0 3px 5px rgba(79, 70, 229, 0.2);
+        }
+
+        .file-list {
+            margin-bottom: 1.5rem;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background-color: var(--input-bg);
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .file-item:hover {
+            background-color: rgba(79, 70, 229, 0.05);
+        }
+
+        .file-name {
+            font-weight: 500;
+            color: var(--text);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 70%;
+        }
+
+        .file-size {
+            color: var(--text-light);
+            font-size: 0.85rem;
+        }
+
+        .progress-container {
+            margin-bottom: 1.5rem;
+        }
+
+        .progress-bar {
+            height: 0.75rem;
+            background-color: var(--input-bg);
+            border-radius: 1rem;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+            position: relative;
+        }
+
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.2),
+                transparent
+            );
+            animation: shimmer 1.5s infinite;
+            transform: translateX(-100%);
+        }
+
+        @keyframes shimmer {
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        .progress {
+            height: 100%;
+            background-color: var(--primary);
+            border-radius: 1rem;
+            width: 0;
+            transition: width 0.3s ease;
+        }
+
+        #progressText {
+            text-align: right;
+            font-size: 0.85rem;
+            color: var(--text-light);
+        }
+
+        .submit-button {
+            display: inline-block;
+            width: auto;
+            min-width: 200px;
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 0.75rem;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0 auto;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+            overflow: hidden;
+            position: relative;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .submit-button span {
+            position: relative;
+            z-index: 1;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+
+        .submit-button svg {
+            width: 24px;
+            height: 24px;
+            transition: transform 0.3s ease;
+        }
+
+        .submit-button:hover {
+            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(79, 70, 229, 0.4);
+        }
+
+        .submit-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: all 0.5s ease;
+        }
+
+        .submit-button::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 60%);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .submit-button:hover::before {
+            animation: shimmer 1.5s infinite;
+        }
+
+        .submit-button:hover::after {
+            opacity: 1;
+            animation: pulse-radial 1.5s infinite;
+        }
+
+        .submit-button:active {
+            transform: translateY(0);
+            box-shadow: 0 3px 5px rgba(79, 70, 229, 0.3);
+        }
+
+        .submit-button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .submit-button svg {
+            transition: transform 0.3s ease;
+        }
+
+        .submit-button:hover svg {
+            transform: translateY(-2px);
+        }
+
+        @keyframes pulse-radial {
+            0% {
+                opacity: 0.5;
+                transform: scale(0.8);
+            }
+            50% {
+                opacity: 0.3;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0.5;
+                transform: scale(0.8);
+            }
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            animation: fadeIn 0.5s ease;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .alert-success {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border-left: 4px solid var(--success);
+        }
+
+        .alert-error {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--error);
+            border-left: 4px solid var(--error);
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        /* Navigation Bar */
+        .navbar {
+            background-color: var(--card-bg);
+            box-shadow: 0 2px 10px var(--shadow);
+            padding: 0.75rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            animation: slideDown 0.5s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-100%);
+            }
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        .navbar-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        .navbar-logo {
+            display: flex;
+            align-items: center;
+            color: var(--primary);
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-decoration: none;
+            gap: 0.5rem;
+        }
+
+        .navbar-logo svg {
+            transition: transform 0.3s ease;
+        }
+
+        .navbar-logo:hover svg {
+            transform: rotate(-10deg);
+        }
+
+        .navbar-menu {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .nav-link {
+            color: var(--text);
+            text-decoration: none;
+            font-size: 1rem;
+            font-weight: 500;
+            padding: 0.5rem 0;
+            position: relative;
+            transition: color 0.3s ease;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: var(--primary);
+            transition: width 0.3s ease;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--primary);
+        }
+
+        .nav-link:hover::after, .nav-link.active::after {
+            width: 100%;
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            transition: background-color 0.3s ease;
+            color: var(--text);
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--input-bg);
+        }
+
+        .sun-icon, .moon-icon {
+            position: absolute;
+            transition: opacity 0.3s ease, transform 0.5s ease;
+        }
+
+        [data-theme="dark"] .sun-icon {
+            opacity: 1;
+            transform: rotate(0);
+        }
+
+        [data-theme="dark"] .moon-icon {
+            opacity: 0;
+            transform: rotate(90deg);
+        }
+
+        [data-theme="light"] .sun-icon {
+            opacity: 0;
+            transform: rotate(-90deg);
+        }
+
+        [data-theme="light"] .moon-icon {
+            opacity: 1;
+            transform: rotate(0);
+        }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            border-radius: 1rem;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            position: relative;
+            transform: translateY(30px);
+            opacity: 0;
+            transition: transform 0.5s ease, opacity 0.5s ease;
+        }
+
+        .modal.active .modal-content {
+            transform: translateY(0);
+            opacity: 1;
+            transition-delay: 0.1s;
+        }
+
+        .modal-content h2 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+            font-size: 1.75rem;
+        }
+
+        .modal-content p {
+            margin-bottom: 1rem;
+            color: var(--text);
+        }
+
+        .modal-content ul {
+            margin-left: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-content li {
+            margin-bottom: 0.5rem;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: transparent;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-light);
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .close-modal:hover {
+            background-color: var(--input-bg);
+            color: var(--text);
+            transform: rotate(90deg);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.8;
+                transform: scale(1.05);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        .shake-animation {
+            animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
+
+        /* Responsive Design */
+        @media screen and (max-width: 768px) {
+            .navbar-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .navbar-menu {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .drop-zone {
+                padding: 2rem 1rem;
+            }
+            
+            .drop-zone-content p {
+                font-size: 1.1rem;
+            }
+            
+            .button, .submit-button {
+                padding: 0.75rem 1.25rem;
+            }
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 2rem;
+            width: 100%;
+        }
+
+        .conversion-options {
+            margin: 2rem 0;
+            text-align: center;
+        }
+
+        .conversion-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .conversion-button {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            background-color: #4f46e5;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .conversion-button:hover {
+            background-color: #4338ca;
+            transform: translateY(-2px);
+        }
+
+        .conversion-section {
+            margin: 3rem 0;
+            padding: 2rem;
+            background: #f8f9fa;
+            border-radius: 1rem;
+        }
+
+        .conversion-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .conversion-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .conversion-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.1);
+            border-color: #4f46e5;
+        }
+
+        .conversion-card i {
+            font-size: 2.5rem;
+            color: #4f46e5;
+            margin-bottom: 1rem;
+        }
+
+        .conversion-card span {
+            display: block;
+            font-weight: 600;
+            color: #1f2937;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="/" class="navbar-logo">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                PDF Merger
+            </a>
+            <div class="navbar-menu">
+                <a href="/" class="nav-link active">Home</a>
+                <a href="#" class="nav-link" id="howToUse">How to Use</a>
+                <a href="#" class="nav-link" id="about">About</a>
+            </div>
+            <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
+                <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="5"/>
+                    <line x1="12" y1="1" x2="12" y2="3"/>
+                    <line x1="12" y1="21" x2="12" y2="23"/>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                    <line x1="1" y1="12" x2="3" y2="12"/>
+                    <line x1="21" y1="12" x2="23" y2="12"/>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                </svg>
+                <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 A7 7 0 0 0 21 12.79z"/>
+                </svg>
+            </button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header>
+            <h1>PDF Merger</h1>
+            <p>Merge multiple PDF files into one document</p>
+        </header>
+
+        <main>
+            <div class="upload-container">
+                <form id="uploadForm" action="{{ url_for('merge') }}" method="post" enctype="multipart/form-data">
+                    <div class="drop-zone" id="dropZone">
+                        <div class="drop-zone-content">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <p>Drag and drop PDF files here</p>
+                            <span>or</span>
+                            <label for="fileInput" class="button">Choose Files</label>
+                            <input type="file" id="fileInput" name="files[]" multiple accept=".pdf" required>
+                        </div>
+                    </div>
+                    <div id="fileList" class="file-list"></div>
+                    <div id="progressContainer" class="progress-container" style="display: none;">
+                        <div class="progress-bar">
+                            <div id="progressBar" class="progress"></div>
+                        </div>
+                        <div id="progressText">0%</div>
+                    </div>
+                    <div class="conversion-options">
+                        <h3>Convert PDF to:</h3>
+                        <div class="conversion-buttons">
+                            <button type="button" class="conversion-button" data-type="word">
+                                <i class="fas fa-file-word"></i>
+                                Word
+                            </button>
+                            <button type="button" class="conversion-button" data-type="jpg">
+                                <i class="fas fa-file-image"></i>
+                                JPG
+                            </button>
+                            <button type="button" class="conversion-button" data-type="excel">
+                                <i class="fas fa-file-excel"></i>
+                                Excel
+                            </button>
+                            <button type="button" class="conversion-button" data-type="ppt">
+                                <i class="fas fa-file-powerpoint"></i>
+                                PowerPoint
+                            </button>
+                        </div>
+                    </div>
+                    <div class="button-container">
+                        <button type="submit" class="submit-button" id="mergeButton">
+                            <span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M8 17l4 4 4-4M12 12v9"></path>
+                                    <path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 0 0 3 16.29"></path>
+                                </svg>
+                                Merge PDFs
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="resultMessage" class="alert" style="display: none;"></div>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 PDF Merger. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <!-- Modals -->
+    <div id="howToUseModal" class="modal">
+        <div class="modal-content">
+            <h2>How to Use PDF Merger</h2>
+            <p>1. Drop your PDF files in the upload area or click to select files</p>
+            <p>2. Select at least 2 PDF files you want to merge</p>
+            <p>3. Click "Merge PDFs" button to combine your files</p>
+            <p>4. Wait for the process to complete and download your merged PDF</p>
+            <button class="close-modal">&times;</button>
+        </div>
+    </div>
+
+    <div id="aboutModal" class="modal">
+        <div class="modal-content">
+            <h2>About PDF Merger</h2>
+            <p>PDF Merger is a simple online tool that allows you to combine multiple PDF files into a single document. Built with security and ease of use in mind.</p>
+            <p>Features:</p>
+            <ul>
+                <li>Merge multiple PDFs</li>
+                <li>Drag and drop interface</li>
+                <li>Dark mode support</li>
+                <li>Secure file handling</li>
+            </ul>
+            <button class="close-modal">&times;</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropZone = document.getElementById('dropZone');
+            const fileInput = document.getElementById('fileInput');
+            const fileList = document.getElementById('fileList');
+            const uploadForm = document.getElementById('uploadForm');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            const resultMessage = document.getElementById('resultMessage');
+            const mergeButton = document.getElementById('mergeButton');
+            const themeToggle = document.getElementById('themeToggle');
+            const howToUseLink = document.getElementById('howToUse');
+            const aboutLink = document.getElementById('about');
+            const howToUseModal = document.getElementById('howToUseModal');
+            const aboutModal = document.getElementById('aboutModal');
+            const closeButtons = document.querySelectorAll('.close-modal');
+            
+            // Add animation classes to elements
+            function animateElements() {
+                const elements = document.querySelectorAll('.upload-container, .drop-zone, .button, h1');
+                elements.forEach((element, index) => {
+                    setTimeout(() => {
+                        element.style.opacity = '1';
+                        element.style.transform = 'translateY(0)';
+                    }, 100 * index);
+                });
+            }
+            
+            // Call animation on load
+            animateElements();
+            
+            // Handle file selection
+            fileInput.addEventListener('change', function() {
+                updateFileList();
+            });
+            
+            // Handle drag and drop
+            dropZone.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                dropZone.classList.add('active');
+            });
+            
+            dropZone.addEventListener('dragleave', function() {
+                dropZone.classList.remove('active');
+            });
+            
+            dropZone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                dropZone.classList.remove('active');
+                
+                const dt = e.dataTransfer;
+                if (dt.files.length) {
+                    fileInput.files = dt.files;
+                    updateFileList();
+                }
+            });
+            
+            dropZone.addEventListener('click', function() {
+                fileInput.click();
+            });
+            
+            // Update file list display
+            function updateFileList() {
+                fileList.innerHTML = '';
+                
+                if (fileInput.files.length) {
+                    for (let i = 0; i < fileInput.files.length; i++) {
+                        const file = fileInput.files[i];
+                        const fileItem = document.createElement('div');
+                        fileItem.className = 'file-item';
+                        fileItem.style.opacity = '0';
+                        fileItem.style.transform = 'translateX(20px)';
+                        
+                        const fileName = document.createElement('div');
+                        fileName.className = 'file-name';
+                        fileName.textContent = file.name;
+                        
+                        const fileSize = document.createElement('div');
+                        fileSize.className = 'file-size';
+                        fileSize.textContent = formatFileSize(file.size);
+                        
+                        fileItem.appendChild(fileName);
+                        fileItem.appendChild(fileSize);
+                        fileList.appendChild(fileItem);
+                        
+                        // Trigger animation with slight delay for each item
+                        setTimeout(() => {
+                            fileItem.style.opacity = '1';
+                            fileItem.style.transform = 'translateX(0)';
+                        }, 50 * i);
+                    }
+                }
+            }
+            
+            // Format file size
+            function formatFileSize(bytes) {
+                if (bytes < 1024) return bytes + ' B';
+                else if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+                else return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+            }
+            
+            // Handle form submission
+            uploadForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                if (fileInput.files.length < 2) {
+                    showMessage('Please select at least 2 PDF files to merge.', 'error');
+                    shakeElement(mergeButton);
+                    return;
+                }
+                
+                // Check if all files are PDFs
+                let allPdfFiles = true;
+                for (let i = 0; i < fileInput.files.length; i++) {
+                    const file = fileInput.files[i];
+                    if (!file.name.toLowerCase().endsWith('.pdf')) {
+                        allPdfFiles = false;
+                        break;
+                    }
+                }
+                
+                if (!allPdfFiles) {
+                    showMessage('All files must be PDF documents.', 'error');
+                    shakeElement(mergeButton);
+                    return;
+                }
+                
+                // Show progress
+                progressContainer.style.display = 'block';
+                progressBar.style.width = '0%';
+                progressText.textContent = '0%';
+                mergeButton.disabled = true;
+                
+                // Create FormData and submit
+                const formData = new FormData(uploadForm);
+                
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', uploadForm.action, true);
+                
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        const percentComplete = Math.round((e.loaded / e.total) * 100);
+                        progressBar.style.width = percentComplete + '%';
+                        progressText.textContent = percentComplete + '%';
+                    }
+                });
+                
+                xhr.addEventListener('load', function() {
+                    progressBar.style.width = '100%';
+                    progressText.textContent = '100%';
+                    
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        
+                        if (xhr.status === 200 && response.success) {
+                            showMessage(response.message, 'success');
+                            
+                            // Create download button
+                            const downloadButton = document.createElement('a');
+                            downloadButton.href = response.download_url;
+                            downloadButton.className = 'button';
+                            downloadButton.style.display = 'inline-block';
+                            downloadButton.style.marginTop = '1rem';
+                            downloadButton.textContent = 'Download Merged PDF';
+                            downloadButton.style.opacity = '0';
+                            resultMessage.appendChild(downloadButton);
+                            
+                            // Animate download button appearance
+                            setTimeout(() => {
+                                downloadButton.style.opacity = '1';
+                                downloadButton.style.transform = 'translateY(0)';
+                            }, 300);
+                            
+                            // Reset form
+                            uploadForm.reset();
+                            fileList.innerHTML = '';
+                        } else {
+                            showMessage(response.error || 'Error merging PDFs', 'error');
+                        }
+                    } catch (e) {
+                        showMessage('Unexpected response from server', 'error');
+                    }
+                    
+                    mergeButton.disabled = false;
+                });
+                
+                xhr.addEventListener('error', function() {
+                    showMessage('Network error occurred', 'error');
+                    mergeButton.disabled = false;
+                });
+                
+                xhr.send(formData);
+            });
+            
+            // Show message
+            function showMessage(message, type) {
+                resultMessage.innerHTML = message;
+                resultMessage.className = 'alert alert-' + type;
+                resultMessage.style.display = 'block';
+                resultMessage.style.opacity = '0';
+                resultMessage.style.transform = 'translateY(20px)';
+                
+                // Animate alert appearance
+                setTimeout(() => {
+                    resultMessage.style.opacity = '1';
+                    resultMessage.style.transform = 'translateY(0)';
+                }, 10);
+            }
+            
+            // Shake element animation
+            function shakeElement(element) {
+                element.classList.add('shake-animation');
+                setTimeout(() => {
+                    element.classList.remove('shake-animation');
+                }, 500);
+            }
+            
+            // Toggle theme
+            themeToggle.addEventListener('click', function() {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                
+                // Animate theme transition
+                document.body.style.opacity = '0.8';
+                setTimeout(() => {
+                    document.documentElement.setAttribute('data-theme', newTheme);
+                    localStorage.setItem('theme', newTheme);
+                    setTimeout(() => {
+                        document.body.style.opacity = '1';
+                    }, 100);
+                }, 100);
+            });
+            
+            // Set initial theme from localStorage
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            
+            // Modal functionality
+            function openModal(modal) {
+                modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+                
+                // Focus trap for accessibility
+                const focusableElements = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+                if (focusableElements.length) {
+                    setTimeout(() => {
+                        focusableElements[0].focus();
+                    }, 100);
+                }
+            }
+            
+            function closeModal(modal) {
+                modal.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+            
+            // Open modals
+            howToUseLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                openModal(howToUseModal);
+            });
+            
+            aboutLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                openModal(aboutModal);
+            });
+            
+            // Close modals
+            closeButtons.forEach(function(button) {
+                button.addEventListener('click', function() {
+                    const modal = this.closest('.modal');
+                    closeModal(modal);
+                });
+            });
+            
+            // Close modal when clicking outside
+            window.addEventListener('click', function(e) {
+                if (e.target.classList.contains('modal')) {
+                    closeModal(e.target);
+                }
+            });
+            
+            // Close modal with ESC key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    const activeModal = document.querySelector('.modal.active');
+                    if (activeModal) {
+                        closeModal(activeModal);
+                    }
+                }
+            });
+            
+            // Add CSS animation for shake
+            const styleSheet = document.createElement('style');
+            styleSheet.type = 'text/css';
+            styleSheet.innerText = `
+                @keyframes shake {
+                    0%, 100% { transform: translateX(0); }
+                    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+                    20%, 40%, 60%, 80% { transform: translateX(5px); }
+                }
+                .shake-animation {
+                    animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+                }
+            `;
+            document.head.appendChild(styleSheet);
+            
+            // Handle conversion button clicks
+            document.querySelectorAll('.conversion-button').forEach(button => {
+                button.addEventListener('click', async () => {
+                    const conversionType = button.dataset.type;
+                    const fileInput = document.getElementById('fileInput');
+                    
+                    if (fileInput.files.length === 0) {
+                        alert('Please select a PDF file to convert');
+                        return;
+                    }
+                    
+                    const formData = new FormData();
+                    formData.append('file', fileInput.files[0]);
+                    
+                    try {
+                        const response = await fetch(`/convert/${conversionType}`, {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        if (response.ok) {
+                            const blob = await response.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `converted.${conversionType === 'jpg' ? 'zip' : conversionType}`;
+                            document.body.appendChild(a);
+                            a.click();
+                            a.remove();
+                            window.URL.revokeObjectURL(url);
+                        } else {
+                            const error = await response.json();
+                            alert(`Error: ${error.error}`);
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('An error occurred during conversion');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

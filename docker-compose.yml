@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  pdf-merger:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pdf-merger-app
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./merged:/app/merged
+    restart: unless-stopped
+    environment:
+      - FLASK_ENV=production
+      - FLASK_APP=app.py
+    command: python app.py
