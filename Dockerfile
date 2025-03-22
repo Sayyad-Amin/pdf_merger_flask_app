@@ -1,4 +1,4 @@
-FROM python:3.9-slim
+FROM python:3.9-bullseye
 
 # Set working directory
 WORKDIR /app
@@ -18,6 +18,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tesseract-ocr \
     libreoffice \
     default-jre \
+    python3-dev \
+    libmupdf-dev \
+    swig \
+    libssl-dev \
+    libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first to leverage Docker cache
@@ -25,6 +30,7 @@ COPY requirements.txt .
 
 # Install Python dependencies
 RUN pip install --upgrade pip && \
+    pip install wheel && \
     pip install -r requirements.txt
 
 # Copy project files
